@@ -1,7 +1,5 @@
 package org.example;
 
-import org.example.Game.Game;
-
 import java.util.Scanner;
 
 public class Main {
