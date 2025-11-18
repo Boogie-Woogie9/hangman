@@ -1,103 +1,131 @@
 package org.example.Game;
 
-import java.util.*;
+import java.util.Random;
 
 public class Game {
-    private Data data; //данные из файла
-    private String[] matrix; //отображение виселицы
-    private byte errorAmount; //счетчик ошибок
-    private String selectedWord; //загаданное слово
+    private String selectedWord;
+    private String currentWord;
+    private int errorAmount;
+    private boolean gameOver;
+    private boolean gameWon;
 
-    public Game(){
-        System.out.println("Игра виселица!");
+    public Game() {}
+
+    public void startNewGame() {
+        // Берём слово, убираем лишние пробелы и приводим к верхнему регистру
+        this.selectedWord = Data.wordsPool
+                .get(new Random().nextInt(Data.wordsPool.size()))
+                .trim()
+                .toUpperCase();
+
+        // Создаем строку со звездочками той же длины
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < selectedWord.length(); i++) {
+            sb.append('*');
+        }
+        this.currentWord = sb.toString();
+
+        // Сбрасываем состояние
+        this.errorAmount = 0;
+        this.gameOver = false;
+        this.gameWon = false;
     }
-    public void start(){
-        data = new Data();
-        selectedWord = Data.wordsPool
-                .get(new Random().nextInt(Data.wordsPool.size())); //случайно выбираем слово
-        errorAmount = 0;
-        matrix = new String[]{
+
+    public GameState makeGuess(char letter) {
+        if (gameOver || gameWon) {
+            return getGameState();
+        }
+
+        boolean wrongChar = true;
+        char upperLetter = Character.toUpperCase(letter);
+
+        // Проверяем угаданную букву
+        StringBuilder newCurrentWord = new StringBuilder();
+        for (int i = 0; i < selectedWord.length(); i++) {
+            // Надёжное сравнение: оба символа в верхнем регистре
+            if (Character.toUpperCase(selectedWord.charAt(i)) == upperLetter) {
+                newCurrentWord.append(upperLetter);
+                wrongChar = false;
+            } else {
+                newCurrentWord.append(currentWord.charAt(i));
+            }
+        }
+
+        currentWord = newCurrentWord.toString();
+
+        if (wrongChar) {
+            errorAmount++;
+        }
+
+        // Проверяем условия окончания игры
+        if (errorAmount >= 7) {
+            gameOver = true;
+        } else if (!currentWord.contains("*")) {
+            gameWon = true;
+        }
+
+        return getGameState();
+    }
+
+    public GameState getGameState() {
+        GameState state = new GameState();
+
+        // Передаём выбранное слово клиенту только если игра закончена (чтобы не раскрывать ответ)
+        if (gameOver || gameWon) {
+            state.setSelectedWord(selectedWord);
+        } else {
+            state.setSelectedWord(null);
+        }
+
+        state.setCurrentWord(currentWord.toCharArray());
+        state.setErrorAmount(errorAmount);
+        state.setGameOver(gameOver);
+        state.setGameWon(gameWon);
+
+        // Обновляем матрицу виселицы
+        updateMatrix(state);
+
+        // Формируем сообщение (только одно!)
+        String message;
+        if (gameWon) {
+            message = "🎉 Вы выиграли! Мои поздравления!\nЗагаданное слово: " + selectedWord;
+        } else if (gameOver) {
+            message = "💀 Поражение!\nЗагаданное слово: " + selectedWord;
+        } else if (errorAmount == 0) {
+            message = "Слово загадано! Выбирайте букву!";
+        } else {
+            message = "Текущее состояние: " + currentWord +
+                    " | Ошибок: " + errorAmount + "/7";
+        }
+        state.setMessage(message);
+
+        return state;
+    }
+
+    // updateMatrix и isGameActive без изменений
+    private void updateMatrix(GameState state) {
+        String[] matrix = new String[]{
                 ".____",
                 "|    ",
                 "|    ",
                 "|    ",
                 "|    "
         };
-        paint();
-        System.out.println("Слово загадано! Выбирайте букву!");
-        play();
+
+        int errors = state.getErrorAmount();
+
+        if (errors >= 1) matrix[1] = "|  | ";
+        if (errors >= 2) matrix[2] = "|  O ";
+        if (errors >= 3) matrix[3] = "|  | ";
+        if (errors >= 4) matrix[3] = "| /| ";
+        if (errors >= 5) matrix[3] = "| /|\\";
+        if (errors >= 6) matrix[4] = "| /  ";
+        if (errors >= 7) matrix[4] = "| / \\";
+
+        state.setMatrix(matrix);
     }
 
-    private void paint(){
-        switch(errorAmount){
-            case 1:
-                matrix[1] = "|  | ";
-                break;
-            case 2:
-                matrix[2] = "|  O ";
-                break;
-            case 3:
-                matrix[3] = "|  | ";
-                break;
-            case 4:
-                matrix[3] = "| /| ";
-                break;
-            case 5:
-                matrix[3] = "| /|\\";
-                break;
-            case 6:
-                matrix[4] = "| /  ";
-                break;
-            case 7:
-                matrix[4] = "| / \\  ";
-                break;
-        }
-        for (String str : matrix) System.out.println(str);
-    }
-    private void play(){
-        boolean game = true;
-        boolean gameover = false;
-
-        char[] strangeWord = selectedWord.toCharArray(); //загаданное слово в виде массива char
-        char[] prevWord = new char[selectedWord.length()];
-        Arrays.fill(prevWord, '*');
-        System.out.println(new String(prevWord));
-
-        Scanner input = new Scanner(System.in);
-        while (game){
-
-            char symbol = input.next().charAt(0);
-
-            boolean wrongChar = true;
-            StringBuilder buff = new StringBuilder();
-            for (int i = 0; i < strangeWord.length; i++){
-                if (strangeWord[i] == symbol){
-                    buff.append(symbol);
-                    wrongChar = false;
-                } else {
-                    buff.append(prevWord[i]);
-                }
-            }
-            prevWord = buff.toString().toCharArray();
-
-            if (wrongChar) errorAmount++;
-
-            if (errorAmount == 7 || !(new String(prevWord).contains("*"))){
-                if (errorAmount == 7) gameover = true;
-                game = false;
-            }
-            paint();
-            System.out.println(new String(prevWord));
-        }
-        if (!gameover){
-            System.out.println("Вы выиграли! Мои поздравления!");
-        } else {
-            this.end();
-        }
-    }
-
-    public void end(){
-        System.out.println("Поражение!");
-        System.out.println("Загаданное слово : " + selectedWord);
+    public boolean isGameActive() {
+        return !gameOver && !gameWon;
     }
 }

@@ -1,5 +1,7 @@
 package org.example.Server;
 
+import org.example.Game.GameState;
+
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
