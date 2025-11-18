@@ -15,7 +15,7 @@ public class Data {
         {
             String line;
             while ((line = reader.readLine()) != null){
-                if (line.length() <= 8) { wordsPool.add(line); }
+                if (line.length() <= 5) { wordsPool.add(line); }
             }
             System.out.println("Выбираем одно из " + wordsPool.size() + " слов...");
         } catch (FileNotFoundException e) {
