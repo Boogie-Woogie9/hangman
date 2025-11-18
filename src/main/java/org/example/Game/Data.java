@@ -1,4 +1,4 @@
-package org.example;
+package org.example.Game;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -8,14 +8,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Data {
-    public static List<String> wordsPool = new ArrayList<String>();
+    public static List<String> wordsPool = new ArrayList<>();
 
     public Data(){
-        try(BufferedReader reader = new BufferedReader(new FileReader("src/main/resources/words.txt")))
+        try(BufferedReader reader = new BufferedReader(new FileReader("src/main/resources/words2.txt")))
         {
             String line;
             while ((line = reader.readLine()) != null){
-                if (line.length() <= 5) { wordsPool.add(line); }
+                if (line.length() <= 5) {
+                    wordsPool.add(line.toLowerCase()); }
             }
             System.out.println("Выбираем одно из " + wordsPool.size() + " слов...");
         } catch (FileNotFoundException e) {
